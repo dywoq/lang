@@ -34,6 +34,8 @@ type debug struct {
 var ErrWorking = errors.New("scanner: scanning right now")
 
 var errNoMatch = errors.New("scanner: internal: no match")
+var errEof = errors.New("scanner: internal: eof")
+var errOutOfBounds = errors.New("scanner: internal: out of bounds")
 
 // New returns a pointer to Scanner with the given io.Reader instance.
 // If something fails, the function returns nil and an error.
@@ -118,7 +120,7 @@ func (s *Scanner) Scan() ([]*token.Token, error) {
 		s.skipWhitespace()
 		tok, err := s.tokenize()
 		if err != nil {
-			if err == io.EOF {
+			if err == errEof {
 				break
 			}
 			return nil, err
@@ -218,7 +220,6 @@ func (s *Scanner) advance(n int) error {
 	return nil
 }
 
-
 func (s *Scanner) backwards(n int) error {
 	if n < 0 {
 		return errors.New("backwards: cannot move backwards by a negative amount")
@@ -245,7 +246,7 @@ func (s *Scanner) backwards(n int) error {
 
 func (s *Scanner) current() (rune, error) {
 	if s.eof() {
-		return 0, io.EOF
+		return 0, errEof
 	}
 	s.debugf("getting current character: %s", string(s.input[s.p.Position]))
 	return rune(s.input[s.p.Position]), nil
@@ -275,6 +276,17 @@ func (s *Scanner) position() *token.Position {
 	return s.p
 }
 
+func (s *Scanner) peek() (rune, error) {
+	if s.p.Position+1 >= len(s.input) {
+		return 0, errOutOfBounds
+	}
+	return rune(s.input[s.p.Position+1]), nil
+}
+
+func (s *Scanner) errorf(format string, v ...any) error {
+	return fmt.Errorf("%s; source: %s", fmt.Sprintf(format, v...), fmt.Sprintf("%d:%d", s.p.Line, s.p.Column))
+}
+
 // tokenizers
 
 func (s *Scanner) tokenizeNumber() (*token.Token, error) {
@@ -282,28 +294,61 @@ func (s *Scanner) tokenizeNumber() (*token.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !unicode.IsDigit(r) {
+	if !unicode.IsNumber(r) {
 		return nil, errNoMatch
 	}
 	start := s.position().Position
+	s.debug("tokenizing number")
 	for {
-		err := s.advance(1)
-		if err != nil {
-			return nil, err
-		}
-		r, err := s.current()
-		if err != nil {
-			return nil, err
-		}
-		if s.eof() || !unicode.IsDigit(r) {
+		if err := s.advance(1); err != nil {
 			break
 		}
+
+		r, err = s.current()
+		if err != nil {
+			break
+		}
+
+		if !unicode.IsNumber(r) {
+			break
+		}
+	}
+	if r == '.' {
+		s.debug("detected dot, consuming fractional part")
+		if err := s.advance(1); err != nil {
+			return nil, s.errorf("expected a number after dot")
+		}
+
+		r, _ = s.current()
+		if !unicode.IsNumber(r) {
+			return nil, s.errorf("expected a number after dot")
+		}
+
+		for {
+			if err := s.advance(1); err != nil {
+				break
+			}
+
+			r, err = s.current()
+			if err != nil {
+				break
+			}
+
+			if !unicode.IsNumber(r) {
+				break
+			}
+		}
+		str, err := s.slice(start, s.position().Position)
+		if err != nil {
+			return nil, err
+		}
+		return s.new(str, token.Float), nil
 	}
 	str, err := s.slice(start, s.position().Position)
 	if err != nil {
 		return nil, err
 	}
-	return s.new(str, token.Integer), nil
+	return s .new(str, token.Integer), nil
 }
 
 // Set turns on the debugging mode.
