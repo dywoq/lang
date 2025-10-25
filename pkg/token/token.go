@@ -43,6 +43,8 @@ const (
 	String             Kind = "string"
 	Separator          Kind = "separator"
 	Illegal            Kind = "illegal"
+	Type               Kind = "type"
+	Identifier         Kind = "identifier"
 	Eof                Kind = "eof"
 )
 

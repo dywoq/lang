@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 	"unicode"
 
@@ -140,6 +141,7 @@ func (s *Scanner) setup() {
 	if !s.lazysetup {
 		s.tokenizers = []tokenizer{
 			s.tokenizeNumber,
+			s.tokenizeIdentifier,
 		}
 		s.lazysetup = true
 	}
@@ -348,7 +350,55 @@ func (s *Scanner) tokenizeNumber() (*token.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s .new(str, token.Integer), nil
+	return s.new(str, token.Integer), nil
+}
+
+func (s *Scanner) tokenizeIdentifier() (*token.Token, error) {
+	r, _ := s.current()
+	if !unicode.IsLetter(r) && r != '_' {
+		return nil, errNoMatch
+	}
+	start := s.position().Position
+	for {
+		r, _ = s.current()
+		if s.eof() || !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_') {
+			break
+		}
+		s.advance(1)
+	}
+
+	str, err := s.slice(start, s.position().Position)
+	if err != nil {
+		return nil, err
+	}
+	if !token.IsIdentifier(str) {
+		s.backwards(s.position().Position - start)
+		return nil, errNoMatch
+	}
+	return s.new(str, token.Identifier), nil
+}
+
+func (s *Scanner) selectWordAndCheck(collection token.Collection) (string, error) {
+	if r, _ := s.current(); !unicode.IsLetter(r) {
+		return "", errNoMatch
+	}
+	start := s.position().Position
+	for {
+		r, _ := s.current()
+		if s.eof() || !unicode.IsLetter(r) {
+			break
+		}
+		s.advance(1)
+	}
+	str, err := s.slice(start, s.position().Position)
+	if err != nil {
+		return "", err
+	}
+	if !slices.Contains(collection, str) {
+		s.backwards(s.position().Position - start)
+		return "", errNoMatch
+	}
+	return str, nil
 }
 
 // Set turns on the debugging mode.
