@@ -32,7 +32,7 @@ This is recommended to use for functions as every symbol's value can be replaced
 # }
 main i32 () {
 	# foo.Abc is not a constant!
-	mov foo.Abc, (x i64) {} 
+	mov foo.Abc, (x i64) {};
 }
 ```
 In the module `Foo`, we create a function `Abc` (not a constant).
@@ -47,7 +47,7 @@ So use:
 # })
 main i32 () {
 	# foo.Abc is a constant, so an error!
-	mov foo.Abc, (x i64) {} 
+	mov foo.Abc, (x i64) {};
 }
 ```
 Now, if you use `const(...)`, the functions can't be replaced.
