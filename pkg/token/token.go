@@ -42,6 +42,8 @@ const (
 	Float              Kind = "float"
 	String             Kind = "string"
 	Separator          Kind = "separator"
+	Illegal            Kind = "illegal"
+	Eof                Kind = "eof"
 )
 
 var (
