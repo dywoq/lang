@@ -141,6 +141,7 @@ func (s *Scanner) setup() {
 	if !s.lazysetup {
 		s.tokenizers = []tokenizer{
 			s.tokenizeModifierConversion,
+			s.tokenizeKeyword,
 			s.tokenizeTypes,
 			s.tokenizeNumber,
 			s.tokenizeString,
@@ -449,6 +450,14 @@ func (s *Scanner) tokenizeModifierConversion() (*token.Token, error) {
 		return nil, err
 	}
 	return s.new(str, token.ModifierConversion), nil
+}
+
+func (s *Scanner) tokenizeKeyword() (*token.Token, error) {
+	str, err := s.selectWordAndCheck(token.Keywords)
+	if err != nil {
+		return nil, err
+	}
+	return s.new(str, token.Keyword), nil
 }
 
 func (s *Scanner) selectWordAndCheck(collection token.Collection) (string, error) {
