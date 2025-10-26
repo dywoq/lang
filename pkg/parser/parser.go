@@ -39,6 +39,10 @@ func New(tokens []*token.Token) *Parser {
 	return p
 }
 
+// NewDebug returns a new pointer to Parser,
+// with the automatically turned on debugger.
+//
+// w is used by the debugger, to write the messages.
 func NewDebug(tokens []*token.Token, w io.Writer) *Parser {
 	p := &Parser{
 		tokens:  tokens,
@@ -50,11 +54,20 @@ func NewDebug(tokens []*token.Token, w io.Writer) *Parser {
 	return p
 }
 
+// ErrWorking means the parser is currently parsing,
+// so the debug options can't be changed,
+// and tokens can't be updated.
 var ErrWorking = errors.New("parser: parsing right now")
 
 var errEof = errors.New("parser: internal: eof")
 var errOutOfBounds = errors.New("parser: internal: out of bounds")
 
+// Update updates the underlying tokens to tokens.
+// Returns ErrWorking if the parser is currently working,
+// or an error tokens slice is nil.
+//
+// A tokens of tokens slice must be not nil,
+// otherwise an error is returned.
 func (p *Parser) Update(tokens []*token.Token) error {
 	if p.parsing {
 		return ErrWorking
@@ -71,9 +84,14 @@ func (p *Parser) Update(tokens []*token.Token) error {
 	return nil
 }
 
+// Parse parses the tokens into ast.Tree,
+// returning a pointer to ast.Tree.
+//
+// Returns an error if the got tokens are empty,
+// and any errors encountered during parsing.
 func (p *Parser) Parse() (*ast.Tree, error) {
 	if len(p.tokens) == 0 {
-		return nil, nil
+		return nil, errors.New("parser: got no tokens")
 	}
 	p.debug("starting parsing")
 	p.parsing = true
@@ -348,6 +366,8 @@ func (p *Parser) parseDeclaration(a *ast.Tree) (ast.Node, error) {
 	}, nil
 }
 
+// Set turns on the debugging mode.
+// Returns ErrWorking if the parser is working right now.
 func (d *debug) Set(b bool) error {
 	if d.p.parsing {
 		return ErrWorking
@@ -356,10 +376,13 @@ func (d *debug) Set(b bool) error {
 	return nil
 }
 
+// On returns true if the debugging mode is on.
 func (d *debug) On() bool {
 	return d.on
 }
 
+// SetWriter sets a instance that implements io.Writer interface.
+// Returns ErrWorking if the parser is working right now.
 func (d *debug) SetWriter(w io.Writer) error {
 	if d.p.parsing {
 		return ErrWorking
