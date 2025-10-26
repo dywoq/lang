@@ -143,6 +143,7 @@ func (s *Scanner) setup() {
 			s.tokenizeTypes,
 			s.tokenizeNumber,
 			s.tokenizeIdentifier,
+			s.tokenizeString,
 		}
 		s.lazysetup = true
 	}
@@ -404,6 +405,31 @@ func (s *Scanner) tokenizeTypes() (*token.Token, error) {
 	}
 	s.backwards(s.position().Position - start)
 	return nil, errNoMatch
+}
+
+func (s *Scanner) tokenizeString() (*token.Token, error) {
+	r, _ := s.current()
+	if r != '"' {
+		return nil, errNoMatch
+	}
+	s.advance(1)
+	start, line := s.position().Position, s.position().Line
+	for {
+		r, _ := s.current()
+		if s.eof() || r == '"' {
+			break
+		}
+		s.advance(1)
+		if s.position().Line != line {
+			return nil, s.errorf("a string with '\"' quote doesn't allow multiline")
+		}
+	}
+	s.advance(1)
+	str, err := s.slice(start, s.position().Position-1)
+	if err != nil {
+		return nil, err
+	}
+	return s.new(str, token.String), nil
 }
 
 func (s *Scanner) selectWordAndCheck(collection token.Collection) (string, error) {

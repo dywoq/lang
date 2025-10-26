@@ -1,1 +1,2 @@
-x i32 20
+x str "Hi!\nBye!"
+y i64 20
