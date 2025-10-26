@@ -142,8 +142,8 @@ func (s *Scanner) setup() {
 		s.tokenizers = []tokenizer{
 			s.tokenizeTypes,
 			s.tokenizeNumber,
-			s.tokenizeIdentifier,
 			s.tokenizeString,
+			s.tokenizeIdentifier,
 		}
 		s.lazysetup = true
 	}
@@ -389,7 +389,7 @@ func (s *Scanner) tokenizeTypes() (*token.Token, error) {
 		return nil, err
 	}
 	switch str {
-	case "u", "i", "fix":
+	case "u", "i", "fix", "f":
 		digit, err := s.selectDigit()
 		if err != nil {
 			return nil, err

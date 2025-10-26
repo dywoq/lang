@@ -1,2 +1,2 @@
 x str "Hi!\nBye!"
-y i64 20
+y f64 20
