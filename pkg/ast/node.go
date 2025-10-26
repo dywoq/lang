@@ -10,7 +10,7 @@ type Tree struct {
 	Global     []string `json:"global"`
 }
 
-type Variable struct {
+type Declaration struct {
 	Identifier string `json:"identifier"`
 	Type       string `json:"type"`
 	Value      Node   `json:"value"`
@@ -49,7 +49,7 @@ type ModifierConversion struct {
 }
 
 func (Tree) node()                {}
-func (Variable) node()            {}
+func (Declaration) node()         {}
 func (Function) node()            {}
 func (FunctionArgument) node()    {}
 func (Instruction) node()         {}

@@ -234,7 +234,7 @@ func (p *Parser) parseDeclaration(a *ast.Tree) (ast.Node, error) {
 		return nil, err
 	}
 	a.Global = append(a.Global, ident.Literal)
-	return ast.Variable{
+	return ast.Declaration{
 		Identifier: ident.Literal,
 		Type:       tType.Literal,
 		Value:      val,
