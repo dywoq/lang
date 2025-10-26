@@ -128,7 +128,7 @@ func (s *Scanner) Scan() ([]*token.Token, error) {
 		}
 		if tok.Kind == token.Illegal {
 			r, _ := s.current()
-			return nil, fmt.Errorf("met illegal character: %s", string(r))
+			return nil, s.errorf("met illegal character: %s", string(r))
 		}
 		result = append(result, tok)
 		s.debugf("tokenized: %s", tok.Literal)
