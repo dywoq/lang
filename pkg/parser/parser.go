@@ -141,7 +141,7 @@ func (p *Parser) current() (*token.Token, error) {
 	return p.tokens[p.pos], nil
 }
 
-func (p *Parser) exceptKind(k token.Kind) (*token.Token, error) {
+func (p *Parser) expectKind(k token.Kind) (*token.Token, error) {
 	t, _ := p.current()
 	if k != t.Kind {
 		return nil, p.errorf("expected \"%s\" kind, got \"%s\" instead", k, t.Kind)
@@ -150,7 +150,7 @@ func (p *Parser) exceptKind(k token.Kind) (*token.Token, error) {
 	return t, nil
 }
 
-func (p *Parser) exceptLiteral(lit string) (*token.Token, error) {
+func (p *Parser) expectLiteral(lit string) (*token.Token, error) {
 	t, _ := p.current()
 	if lit != t.Literal {
 		return nil, p.errorf("expected \"%s\" literal, got \"%s\" instead", lit, t.Literal)
@@ -203,7 +203,7 @@ func (p *Parser) parseValue() (ast.Node, error) {
 	case token.ModifierConversion:
 		name, _ := p.current()
 		p.advance(1)
-		_, err = p.exceptLiteral("(")
+		_, err = p.expectLiteral("(")
 		if err != nil {
 			return nil, err
 		}
@@ -211,21 +211,73 @@ func (p *Parser) parseValue() (ast.Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		_, err = p.exceptLiteral(")")
+		_, err = p.expectLiteral(")")
 		if err != nil {
 			return nil, err
 		}
 		return ast.ModifierConversion{Name: name.Literal, Value: val}, nil
 	}
+
+	if t.Literal == "(" {
+		return p.parseFunctionValue()
+	}
+
 	return nil, p.errorf("unknown token kind: \"%s\"", t.Kind)
 }
 
-func (p *Parser) parseDeclaration(a *ast.Tree) (ast.Node, error) {
-	ident, err := p.exceptKind(token.Identifier)
+func (p *Parser) parseFunctionValue() (ast.Node, error) {
+	_, err := p.expectLiteral("(")
 	if err != nil {
 		return nil, err
 	}
-	tType, err := p.exceptKind(token.Type)
+	args := []ast.FunctionArgument{}
+	for {
+		variadic := false
+		name, err := p.expectKind(token.Identifier)
+		if err != nil {
+			return nil, err
+		}
+		tType, err := p.expectKind(token.Type)
+		if err != nil {
+			return nil, err
+		}
+		
+		if t, _ := p.current(); t.Literal == "^" {
+			variadic = true
+			p.advance(1)
+		}
+
+		args = append(args, ast.FunctionArgument{
+			Name:     name.Literal,
+			Type:     tType.Literal,
+			Variadic: variadic,
+		})
+
+		t, _ := p.current()
+		if t.Literal == ")" {
+			break
+		}
+		if t.Literal == "," {
+			p.advance(1)
+			continue
+		}
+	}
+	_, err = p.expectLiteral(")")
+	if err != nil {
+		return nil, err
+	}
+	return ast.Function{
+		Args: args,
+		Body: []ast.Node{},
+	}, nil
+}
+
+func (p *Parser) parseDeclaration(a *ast.Tree) (ast.Node, error) {
+	ident, err := p.expectKind(token.Identifier)
+	if err != nil {
+		return nil, err
+	}
+	tType, err := p.expectKind(token.Type)
 	if err != nil {
 		return nil, err
 	}

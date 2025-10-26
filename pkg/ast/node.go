@@ -17,7 +17,6 @@ type Declaration struct {
 }
 
 type Function struct {
-	ReturnType string             `json:"return_type"`
 	Args       []FunctionArgument `json:"args"`
 	Body       []Node             `json:"body"`
 }
