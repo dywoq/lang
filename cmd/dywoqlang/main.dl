@@ -1,2 +1,4 @@
-x i32 1023233
-y 2 232323
+x i32 export(consteval(10))
+y i32 consteval(10)
+
+hello str "Hi!"

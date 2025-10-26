@@ -144,7 +144,7 @@ func (p *Parser) current() (*token.Token, error) {
 func (p *Parser) exceptKind(k token.Kind) (*token.Token, error) {
 	t, _ := p.current()
 	if k != t.Kind {
-		return nil, p.errorf("expected \"%s\" kind", k)
+		return nil, p.errorf("expected \"%s\" kind, got \"%s\" instead", k, t.Kind)
 	}
 	p.advance(1)
 	return t, nil
@@ -153,7 +153,7 @@ func (p *Parser) exceptKind(k token.Kind) (*token.Token, error) {
 func (p *Parser) exceptLiteral(lit string) (*token.Token, error) {
 	t, _ := p.current()
 	if lit != t.Literal {
-		return nil, p.errorf("expected \"%s\" literal", lit)
+		return nil, p.errorf("expected \"%s\" literal, got \"%s\" instead", lit, t.Literal)
 	}
 	p.advance(1)
 	return t, nil
@@ -196,8 +196,26 @@ func (p *Parser) parseValue() (ast.Node, error) {
 		return nil, err
 	}
 	switch t.Kind {
-	case token.Integer, token.Float, token.Identifier:
+	case token.Integer, token.Float, token.Identifier, token.String:
+		p.advance(1)
 		return ast.Value{Value: t.Literal}, nil
+
+	case token.ModifierConversion:
+		name, _ := p.current()
+		p.advance(1)
+		_, err = p.exceptLiteral("(")
+		if err != nil {
+			return nil, err
+		}
+		val, err := p.parseValue()
+		if err != nil {
+			return nil, err
+		}
+		_, err = p.exceptLiteral(")")
+		if err != nil {
+			return nil, err
+		}
+		return ast.ModifierConversion{Name: name.Literal, Value: val}, nil
 	}
 	return nil, p.errorf("unknown token kind: \"%s\"", t.Kind)
 }
@@ -216,13 +234,8 @@ func (p *Parser) parseDeclaration(a *ast.Tree) (ast.Node, error) {
 		return nil, err
 	}
 	a.Global = append(a.Global, ident.Literal)
-	p.advance(1)
 	return ast.Variable{
 		Identifier: ident.Literal,
-		Exported:   false,
-		Const:      false,
-		Consteval:  false,
-		Copied:     false,
 		Type:       tType.Literal,
 		Value:      val,
 	}, nil

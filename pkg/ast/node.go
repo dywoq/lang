@@ -12,10 +12,6 @@ type Tree struct {
 
 type Variable struct {
 	Identifier string `json:"identifier"`
-	Exported   bool   `json:"exported"`
-	Const      bool   `json:"const"`
-	Consteval  bool   `json:"consteval"`
-	Copied     bool   `json:"copied"`
 	Type       string `json:"type"`
 	Value      Node   `json:"value"`
 }
@@ -47,6 +43,11 @@ type Value struct {
 	Value string `json:"value"`
 }
 
+type ModifierConversion struct {
+	Name  string `json:"name"`
+	Value Node   `json:"value"`
+}
+
 func (Tree) node()                {}
 func (Variable) node()            {}
 func (Function) node()            {}
@@ -54,3 +55,4 @@ func (FunctionArgument) node()    {}
 func (Instruction) node()         {}
 func (InstructionArgument) node() {}
 func (Value) node()               {}
+func (ModifierConversion) node()  {}
