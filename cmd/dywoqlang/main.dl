@@ -1,2 +1,3 @@
-x str "Hi!\nBye!"
-y f64 20
+x str const("Hi!
+
+")

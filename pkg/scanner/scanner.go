@@ -140,10 +140,12 @@ func (s *Scanner) Scan() ([]*token.Token, error) {
 func (s *Scanner) setup() {
 	if !s.lazysetup {
 		s.tokenizers = []tokenizer{
+			s.tokenizeModifierConversion,
 			s.tokenizeTypes,
 			s.tokenizeNumber,
 			s.tokenizeString,
 			s.tokenizeIdentifier,
+			s.tokenizeSeparator,
 		}
 		s.lazysetup = true
 	}
@@ -430,6 +432,23 @@ func (s *Scanner) tokenizeString() (*token.Token, error) {
 		return nil, err
 	}
 	return s.new(str, token.String), nil
+}
+
+func (s *Scanner) tokenizeSeparator() (*token.Token, error) {
+	r, _ := s.current()
+	if !slices.Contains(token.Separators, string(r)) {
+		return nil, errNoMatch
+	}
+	s.advance(1)
+	return s.new(string(r), token.Separator), nil
+}
+
+func (s *Scanner) tokenizeModifierConversion() (*token.Token, error) {
+	str, err := s.selectWordAndCheck(token.ModifierConversions)
+	if err != nil {
+		return nil, err
+	}
+	return s.new(str, token.ModifierConversion), nil
 }
 
 func (s *Scanner) selectWordAndCheck(collection token.Collection) (string, error) {
