@@ -144,7 +144,7 @@ func (p *Parser) current() (*token.Token, error) {
 func (p *Parser) expectKind(k token.Kind) (*token.Token, error) {
 	t, _ := p.current()
 	if k != t.Kind {
-		return nil, p.errorf("expected \"%s\" kind, got \"%s\" instead", k, t.Kind)
+		return nil, p.errorf("expected \"%s\" kind, got \"%s\" (literal: %s) instead", k, t.Kind, t.Literal)
 	}
 	p.advance(1)
 	return t, nil
@@ -241,7 +241,7 @@ func (p *Parser) parseFunctionValue() (ast.Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		if t, _ := p.current(); t.Literal == "^" {
 			variadic = true
 			p.advance(1)
@@ -266,9 +266,64 @@ func (p *Parser) parseFunctionValue() (ast.Node, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	body, err := p.parseFunctionBody()
+	if err != nil {
+		return nil, err
+	}
+
 	return ast.Function{
 		Args: args,
-		Body: []ast.Node{},
+		Body: body,
+	}, nil
+}
+
+func (p *Parser) parseFunctionBody() ([]ast.Node, error) {
+	_, err := p.expectLiteral("{")
+	if err != nil {
+		return nil, err
+	}
+	body := []ast.Node{}
+	for {
+		t, _ := p.current()
+		if t.Literal == "}" {
+			p.advance(1)
+			break
+		}
+		statement, err := p.parseStatement()
+		if err != nil {
+			return nil, err
+		}
+		body = append(body, statement)
+	}
+	return body, nil
+}
+
+func (p *Parser) parseStatement() (ast.Node, error) {
+	name, err := p.expectKind(token.Identifier)
+	if err != nil {
+		return nil, err
+	}
+	args := []ast.InstructionArgument{}
+	for {
+		arg, err := p.parseValue()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, ast.InstructionArgument{Value: arg})
+		t, _ := p.current()
+		if t.Literal == "," {
+			p.advance(1)
+			continue
+		}
+		if t.Literal == ";" {
+			p.advance(1)
+			break
+		}
+	}
+	return ast.Instruction{
+		Name: name.Literal,
+		Args: args,
 	}, nil
 }
 

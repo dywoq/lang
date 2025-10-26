@@ -33,8 +33,6 @@ type Instruction struct {
 }
 
 type InstructionArgument struct {
-	Consteval bool `json:"consteval"`
-	Copy      bool `json:"copy"`
 	Value     Node `json:"value"`
 }
 

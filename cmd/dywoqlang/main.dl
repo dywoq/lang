@@ -1,0 +1,8 @@
+main i64 const((args str^) {
+ mov x, 0;
+ add x, 20;
+ add x, 20;
+ mul x, 2;
+ print x;
+ ret 0;
+})
