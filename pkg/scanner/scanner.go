@@ -140,6 +140,7 @@ func (s *Scanner) Scan() ([]*token.Token, error) {
 func (s *Scanner) setup() {
 	if !s.lazysetup {
 		s.tokenizers = []tokenizer{
+			s.tokenizeTypes,
 			s.tokenizeNumber,
 			s.tokenizeIdentifier,
 		}
@@ -358,6 +359,7 @@ func (s *Scanner) tokenizeIdentifier() (*token.Token, error) {
 	if !unicode.IsLetter(r) && r != '_' {
 		return nil, errNoMatch
 	}
+	s.debug("tokenizing identifier")
 	start := s.position().Position
 	for {
 		r, _ = s.current()
@@ -373,14 +375,71 @@ func (s *Scanner) tokenizeIdentifier() (*token.Token, error) {
 	}
 	if !token.IsIdentifier(str) {
 		s.backwards(s.position().Position - start)
+		s.debug("not identifier, moving back")
 		return nil, errNoMatch
 	}
 	return s.new(str, token.Identifier), nil
 }
 
+func (s *Scanner) tokenizeTypes() (*token.Token, error) {
+	s.debug("tokenizing type")
+	str, start, err := s.selectWord()
+	if err != nil {
+		return nil, err
+	}
+	switch str {
+	case "u", "i", "fix":
+		digit, err := s.selectDigit()
+		if err != nil {
+			return nil, err
+		}
+		res := str + digit
+		if !slices.Contains(token.Types, res) {
+			return nil, s.errorf("wrong integral type: %s", res)
+		}
+		return s.new(res, token.Type), nil
+
+	case "str", "bool", "void", "uptr":
+		return s.new(str, token.Type), nil
+	}
+	s.backwards(s.position().Position - start)
+	return nil, errNoMatch
+}
+
 func (s *Scanner) selectWordAndCheck(collection token.Collection) (string, error) {
-	if r, _ := s.current(); !unicode.IsLetter(r) {
+	str, start, err := s.selectWord()
+	if err != nil {
+		return "", err
+	}
+	if !slices.Contains(collection, str) {
+		s.backwards(s.position().Position - start)
 		return "", errNoMatch
+	}
+	return str, nil
+}
+
+func (s *Scanner) selectDigit() (string, error) {
+	if r, _ := s.current(); !unicode.IsDigit(r) {
+		return "", s.errorf("expected digit")
+	}
+	start := s.position().Position
+	for {
+		r, _ := s.current()
+		if s.eof() || !unicode.IsDigit(r) {
+			break
+		}
+		s.advance(1)
+	}
+	str, err := s.slice(start, s.position().Position)
+	if err != nil {
+		return "", err
+	}
+	return str, nil
+}
+
+func (s *Scanner) selectWord() (string, int, error) {
+	if r, _ := s.current(); !unicode.IsLetter(r) {
+		return "", 0, errNoMatch
 	}
 	start := s.position().Position
 	for {
@@ -392,13 +451,9 @@ func (s *Scanner) selectWordAndCheck(collection token.Collection) (string, error
 	}
 	str, err := s.slice(start, s.position().Position)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	if !slices.Contains(collection, str) {
-		s.backwards(s.position().Position - start)
-		return "", errNoMatch
-	}
-	return str, nil
+	return str, start, nil
 }
 
 // Set turns on the debugging mode.

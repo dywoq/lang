@@ -67,6 +67,29 @@ var (
 		"consteval",
 		"copy",
 	}
+
+	Types = Collection{
+		"i8",
+		"i16",
+		"i32",
+		"i64",
+		"u8",
+		"u16",
+		"u32",
+		"u64",
+		"str",
+		"bool",
+		"void",
+
+		"uptr",
+		"f32",
+		"f64",
+
+		"i128",
+		"u128",
+
+		"fix64",
+	}
 )
 
 // New returns a pointer to Token.
