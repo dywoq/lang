@@ -6,7 +6,7 @@ type Node interface {
 
 type Tree struct {
 	File       string   `json:"file"`
-	Statements Node     `json:"statements"`
+	Statements []Node   `json:"statements"`
 	Global     []string `json:"global"`
 }
 
@@ -43,9 +43,14 @@ type InstructionArgument struct {
 	Value     Node `json:"value"`
 }
 
+type Value struct {
+	Value string `json:"value"`
+}
+
 func (Tree) node()                {}
 func (Variable) node()            {}
 func (Function) node()            {}
 func (FunctionArgument) node()    {}
 func (Instruction) node()         {}
 func (InstructionArgument) node() {}
+func (Value) node()               {}

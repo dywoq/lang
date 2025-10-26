@@ -65,6 +65,7 @@ var (
 		"const",
 		"consteval",
 		"copy",
+		"export",
 	}
 
 	Types = Collection{
