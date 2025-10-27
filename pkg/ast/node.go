@@ -1,5 +1,7 @@
 package ast
 
+import "github.com/dywoq/lang/pkg/token"
+
 type Node interface {
 	node()
 }
@@ -17,8 +19,8 @@ type Declaration struct {
 }
 
 type Function struct {
-	Args       []FunctionArgument `json:"args"`
-	Body       []Node             `json:"body"`
+	Args []FunctionArgument `json:"args"`
+	Body []Node             `json:"body"`
 }
 
 type FunctionArgument struct {
@@ -33,11 +35,13 @@ type Instruction struct {
 }
 
 type InstructionArgument struct {
-	Value     Node `json:"value"`
+	Kind  token.Kind `json:"kind"`
+	Value Node       `json:"value"`
 }
 
 type Value struct {
-	Value string `json:"value"`
+	Value string     `json:"value"`
+	Kind  token.Kind `json:"kind"`
 }
 
 type ModifierConversion struct {

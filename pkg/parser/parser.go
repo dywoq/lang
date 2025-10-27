@@ -219,7 +219,7 @@ func (p *Parser) parseValue() (ast.Node, error) {
 	switch t.Kind {
 	case token.Integer, token.Float, token.Identifier, token.String:
 		p.advance(1)
-		return ast.Value{Value: t.Literal}, nil
+		return ast.Value{Value: t.Literal, Kind: t.Kind}, nil
 
 	case token.ModifierConversion:
 		name, _ := p.current()
