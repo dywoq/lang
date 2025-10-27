@@ -250,6 +250,14 @@ func (p *Parser) parseFunctionValue() (ast.Node, error) {
 	}
 	args := []ast.FunctionArgument{}
 	for {
+		t, _ := p.current()
+		if t.Literal == ")" {
+			break
+		}
+		if t.Literal == "," {
+			p.advance(1)
+			continue
+		}
 		variadic := false
 		name, err := p.expectKind(token.Identifier)
 		if err != nil {
@@ -270,15 +278,6 @@ func (p *Parser) parseFunctionValue() (ast.Node, error) {
 			Type:     tType.Literal,
 			Variadic: variadic,
 		})
-
-		t, _ := p.current()
-		if t.Literal == ")" {
-			break
-		}
-		if t.Literal == "," {
-			p.advance(1)
-			continue
-		}
 	}
 	_, err = p.expectLiteral(")")
 	if err != nil {
@@ -324,11 +323,6 @@ func (p *Parser) parseStatement() (ast.Node, error) {
 	}
 	args := []ast.InstructionArgument{}
 	for {
-		arg, err := p.parseValue()
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, ast.InstructionArgument{Value: arg})
 		t, _ := p.current()
 		if t.Literal == "," {
 			p.advance(1)
@@ -338,6 +332,11 @@ func (p *Parser) parseStatement() (ast.Node, error) {
 			p.advance(1)
 			break
 		}
+		arg, err := p.parseValue()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, ast.InstructionArgument{Value: arg})
 	}
 	return ast.Instruction{
 		Name: name.Literal,

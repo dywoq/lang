@@ -4,5 +4,7 @@ main i64 const((args str^) {
  add x, 20;
  mul x, 2;
  print x;
- ret 0;
+ ret () {
+	ret 0;
+ };
 })
