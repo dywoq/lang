@@ -33,6 +33,6 @@
 | `u128` | 0 to 2^128 - 1      | No additional information |
 
 ## Fixed-point types
-| Type   | Range                                                       | Additional                      |
-| ------ | ----------------------------------------------------------- | ------------------------------- |
-| `fix64`| -2^32 to 2^32 - 1 (with 32 bits for the fractional part)    | Fixed-point 64-bit representation |
+| Type    | Range                                                    | Additional                        |
+| ------- | -------------------------------------------------------- | --------------------------------- |
+| `fix64` | -2^32 to 2^32 - 1 (with 32 bits for the fractional part) | Fixed-point 64-bit representation |
