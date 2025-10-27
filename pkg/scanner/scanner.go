@@ -16,6 +16,7 @@ type tokenizer func() (*token.Token, error)
 // Scanner is responsible for scanning the code
 // and tokenizing it.
 type Scanner struct {
+	filePath            string
 	input               []byte
 	r                   io.Reader
 	p                   *token.Position
@@ -107,8 +108,9 @@ func (s *Scanner) SetReader(r io.Reader) error {
 // Scan scans the given input, and tokenizes it.
 // If the current character doesn't satisfy the requirements of one of tokenizers,
 // Scan tries other tokenizer.
-func (s *Scanner) Scan() ([]*token.Token, error) {
+func (s *Scanner) Scan(filePath string) ([]*token.Token, error) {
 	s.setup()
+	s.filePath = filePath
 	result := []*token.Token{}
 	s.scanning = true
 	s.debug("starting scanning")
@@ -291,7 +293,7 @@ func (s *Scanner) peek() (rune, error) {
 }
 
 func (s *Scanner) errorf(format string, v ...any) error {
-	return fmt.Errorf("%s; source: %s", fmt.Sprintf(format, v...), fmt.Sprintf("%d:%d", s.p.Line, s.p.Column))
+	return fmt.Errorf("%s; source: %s", fmt.Sprintf(format, v...), fmt.Sprintf("%s:%d", s.filePath, s.p.Line))
 }
 
 // tokenizers

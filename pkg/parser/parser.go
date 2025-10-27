@@ -13,6 +13,7 @@ import (
 type mini func(tree *ast.Tree) (ast.Node, error)
 
 type Parser struct {
+	fileName           string
 	tokens             []*token.Token
 	parsing, lazysetup bool
 	minis              []mini
@@ -89,10 +90,11 @@ func (p *Parser) Update(tokens []*token.Token) error {
 //
 // Returns an error if the got tokens are empty,
 // and any errors encountered during parsing.
-func (p *Parser) Parse() (*ast.Tree, error) {
+func (p *Parser) Parse(fileName string) (*ast.Tree, error) {
 	if len(p.tokens) == 0 {
 		return nil, errors.New("parser: got no tokens")
 	}
+	p.fileName = fileName
 	p.debug("starting parsing")
 	p.parsing = true
 	defer func() {
@@ -102,6 +104,7 @@ func (p *Parser) Parse() (*ast.Tree, error) {
 	p.setup()
 	p.reset()
 	tree := &ast.Tree{}
+	tree.File = p.fileName
 	for {
 		t, err := p.current()
 		if err != nil {
@@ -179,7 +182,7 @@ func (p *Parser) expectLiteral(lit string) (*token.Token, error) {
 
 func (p *Parser) errorf(format string, v ...any) error {
 	t, _ := p.current()
-	return fmt.Errorf("%s; source is %d:%d", fmt.Sprintf(format, v...), t.Position.Line, t.Position.Column)
+	return fmt.Errorf("%s; source is %s:%d", fmt.Sprintf(format, v...), p.fileName, t.Position.Line)
 }
 
 func (p *Parser) advance(n int) error {
