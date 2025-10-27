@@ -6,7 +6,7 @@ import (
 )
 
 // Command represents the CLI command,
-// with the name and execute method.
+// with the name and Execute method.
 type Command interface {
 	Name() string
 	Execute() error
