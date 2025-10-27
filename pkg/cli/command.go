@@ -36,3 +36,9 @@ func ExecuteCommand() error {
 	}
 	return cmd.Execute()
 }
+
+// GivenCommand returns the given command,
+// always equal to os.Args[1].
+func GivenCommand() string {
+	return os.Args[1]
+}
