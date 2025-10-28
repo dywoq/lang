@@ -30,8 +30,10 @@ type FunctionArgument struct {
 }
 
 type Instruction struct {
-	Name string                `json:"name"`
-	Args []InstructionArgument `json:"args"`
+	Name       string                `json:"name"`
+	Module     string                `json:"module"`
+	FromModule bool                  `json:"from_module"`
+	Args       []InstructionArgument `json:"args"`
 }
 
 type InstructionArgument struct {
@@ -40,13 +42,27 @@ type InstructionArgument struct {
 }
 
 type Value struct {
-	Value string     `json:"value"`
-	Kind  token.Kind `json:"kind"`
+	Value      string     `json:"value"`
+	Module     string     `json:"module"`
+	FromModule bool       `json:"from_module"`
+	Kind       token.Kind `json:"kind"`
 }
 
 type ModifierConversion struct {
 	Name  string `json:"name"`
 	Value Node   `json:"value"`
+}
+
+type ModuleDeclaration struct {
+	Name         string             `json:"name"`
+	HasSubModule bool               `json:"has_sub_module"`
+	Next         *ModuleDeclaration `json:"next"`
+}
+
+type ModuleImport struct {
+	Name         string        `json:"name"`
+	HasSubModule bool          `json:"has_sub_module"`
+	Next         *ModuleImport `json:"next"`
 }
 
 func (Tree) node()                {}
@@ -57,3 +73,5 @@ func (Instruction) node()         {}
 func (InstructionArgument) node() {}
 func (Value) node()               {}
 func (ModifierConversion) node()  {}
+func (ModuleDeclaration) node()   {}
+func (ModuleImport) node()        {}

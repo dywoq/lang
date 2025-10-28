@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/dywoq/lang/pkg/ast"
@@ -125,7 +126,7 @@ func (p *Parser) Parse(fileName string) (*ast.Tree, error) {
 func (p *Parser) setup() {
 	if !p.lazysetup {
 		p.minis = []mini{
-			p.parseDeclaration,
+			p.parseTop,
 		}
 		p.lazysetup = true
 	}
@@ -178,6 +179,22 @@ func (p *Parser) expectLiteral(lit string) (*token.Token, error) {
 	}
 	p.advance(1)
 	return t, nil
+}
+
+func (p *Parser) expectLiterals(lits ...string) (*token.Token, error) {
+	t, _ := p.current()
+	if slices.Contains(lits, t.Literal) {
+		return t, nil
+	}
+	return nil, p.errorf("expected \"%v\" literals, got \"%s\" instead", lits, t.Literal)
+}
+
+func (p *Parser) expectKinds(kinds ...token.Kind) (*token.Token, error) {
+	t, _ := p.current()
+	if slices.Contains(kinds, t.Kind) {
+		return t, nil
+	}
+	return nil, p.errorf("expected \"%v\" literals, got \"%s\" instead", kinds, t.Literal)
 }
 
 func (p *Parser) errorf(format string, v ...any) error {
@@ -347,7 +364,14 @@ func (p *Parser) parseStatement() (ast.Node, error) {
 	}, nil
 }
 
-func (p *Parser) parseDeclaration(a *ast.Tree) (ast.Node, error) {
+func (p *Parser) parseTop(a *ast.Tree) (ast.Node, error) {
+	t, err := p.current()
+	if err != nil {
+		return nil, err
+	}
+	if t.Literal == "module" || t.Literal == "import" {
+		return p.parseModule()
+	}
 	ident, err := p.expectKind(token.Identifier)
 	if err != nil {
 		return nil, err
@@ -366,6 +390,77 @@ func (p *Parser) parseDeclaration(a *ast.Tree) (ast.Node, error) {
 		Type:       tType.Literal,
 		Value:      val,
 	}, nil
+}
+
+func (p *Parser) parseModule() (ast.Node, error) {
+	k, err := p.expectLiterals("module", "import")
+	if err != nil {
+		return nil, err
+	}
+
+	switch k.Literal {
+	case "module":
+		p.advance(1)
+		m := &ast.ModuleDeclaration{}
+		ptr := m
+		for {
+			ident, err := p.expectKind(token.Identifier)
+			if err != nil {
+				return nil, err
+			}
+			t, err := p.current()
+			if err != nil {
+				return nil, err
+			}
+			ptr.Name = ident.Literal
+			if t.Literal == "." {
+				p.advance(1)
+				ptr.HasSubModule = true
+				ptr.Next = &ast.ModuleDeclaration{}
+				ptr = ptr.Next
+			} else {
+				ptr.HasSubModule = false
+				break
+			}
+		}
+		_, err = p.expectLiteral(";")
+		if err != nil {
+			return nil, err
+		}
+		return m, nil
+
+	case "import":
+		p.advance(1)
+		i := &ast.ModuleImport{}
+		ptr := i
+		for {
+			ident, err := p.expectKind(token.Identifier)
+			if err != nil {
+				return nil, err
+			}
+			t, err := p.current()
+			if err != nil {
+				return nil, err
+			}
+			ptr.Name = ident.Literal
+			if t.Literal == "." {
+				p.advance(1)
+				ptr.HasSubModule = true
+				ptr.Next = &ast.ModuleImport{}
+				ptr = ptr.Next
+			} else {
+				ptr.HasSubModule = false
+				break
+			}
+		}
+		_, err = p.expectLiteral(";")
+		if err != nil {
+			return nil, err
+		}
+		return i, nil
+	}
+
+	return nil, p.errorf("unknown literal")
 }
 
 // Set turns on the debugging mode.
