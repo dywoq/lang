@@ -31,8 +31,8 @@ type FunctionArgument struct {
 
 type Instruction struct {
 	Name       string                `json:"name"`
-	Module     string                `json:"module"`
 	FromModule bool                  `json:"from_module"`
+	Module     *ModuleChain          `json:"module"`
 	Args       []InstructionArgument `json:"args"`
 }
 
@@ -42,10 +42,10 @@ type InstructionArgument struct {
 }
 
 type Value struct {
-	Value      string     `json:"value"`
-	Module     string     `json:"module"`
-	FromModule bool       `json:"from_module"`
-	Kind       token.Kind `json:"kind"`
+	Value      string       `json:"value"`
+	FromModule bool         `json:"from_module"`
+	Module     *ModuleChain `json:"module"`
+	Kind       token.Kind   `json:"kind"`
 }
 
 type ModifierConversion struct {
@@ -54,15 +54,21 @@ type ModifierConversion struct {
 }
 
 type ModuleDeclaration struct {
-	Name         string             `json:"name"`
-	HasSubModule bool               `json:"has_sub_module"`
-	Next         *ModuleDeclaration `json:"next"`
+	Name         string       `json:"name"`
+	HasSubModule bool         `json:"has_sub_module"`
+	Module       *ModuleChain `json:"chain"`
 }
 
 type ModuleImport struct {
-	Name         string        `json:"name"`
-	HasSubModule bool          `json:"has_sub_module"`
-	Next         *ModuleImport `json:"next"`
+	Name         string       `json:"name"`
+	HasSubModule bool         `json:"has_sub_module"`
+	Module       *ModuleChain `json:"chain"`
+}
+
+type ModuleChain struct {
+	Name         string       `json:"name"`
+	HasSubModule bool         `json:"has_sub_module"`
+	Next         *ModuleChain `json:"next"`
 }
 
 func (Tree) node()                {}
@@ -75,3 +81,4 @@ func (Value) node()               {}
 func (ModifierConversion) node()  {}
 func (ModuleDeclaration) node()   {}
 func (ModuleImport) node()        {}
+func (ModuleChain) node()         {}

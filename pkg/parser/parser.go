@@ -184,6 +184,7 @@ func (p *Parser) expectLiteral(lit string) (*token.Token, error) {
 func (p *Parser) expectLiterals(lits ...string) (*token.Token, error) {
 	t, _ := p.current()
 	if slices.Contains(lits, t.Literal) {
+		p.advance(1)
 		return t, nil
 	}
 	return nil, p.errorf("expected \"%v\" literals, got \"%s\" instead", lits, t.Literal)
@@ -192,6 +193,7 @@ func (p *Parser) expectLiterals(lits ...string) (*token.Token, error) {
 func (p *Parser) expectKinds(kinds ...token.Kind) (*token.Token, error) {
 	t, _ := p.current()
 	if slices.Contains(kinds, t.Kind) {
+		p.advance(1)
 		return t, nil
 	}
 	return nil, p.errorf("expected \"%v\" literals, got \"%s\" instead", kinds, t.Literal)
@@ -336,11 +338,55 @@ func (p *Parser) parseFunctionBody() ([]ast.Node, error) {
 	return body, nil
 }
 
+func (p *Parser) parseModuleChain(main string) (ast.Node, bool, error) {
+	t, err := p.current()
+	if err != nil {
+		return nil, false, err
+	}
+	if t.Literal != "." {
+		return nil, false, nil
+	}
+	m := &ast.ModuleChain{}
+	ptr := m
+	p.advance(1)
+	for {
+		ident, err := p.expectKind(token.Identifier)
+		if err != nil {
+			return nil, false, err
+		}
+		t, err = p.current()
+		if err != nil {
+			return nil, false, err
+		}
+		ptr.Name = ident.Literal
+		if t.Literal == "." {
+			p.advance(1)
+			ptr.HasSubModule = true
+			ptr.Next = &ast.ModuleChain{}
+			ptr = ptr.Next
+			continue
+		} else {
+			ptr.HasSubModule = false
+			break
+		}
+	}
+	return m, true, nil
+}
+
 func (p *Parser) parseStatement() (ast.Node, error) {
 	name, err := p.expectKind(token.Identifier)
 	if err != nil {
 		return nil, err
 	}
+
+	t, _ := p.current()
+	if t.Literal == "." {
+		p.advance(1)
+		for {
+
+		}
+	}
+
 	args := []ast.InstructionArgument{}
 	for {
 		t, _ := p.current()
@@ -400,66 +446,41 @@ func (p *Parser) parseModule() (ast.Node, error) {
 
 	switch k.Literal {
 	case "module":
-		p.advance(1)
-		m := &ast.ModuleDeclaration{}
-		ptr := m
-		for {
-			ident, err := p.expectKind(token.Identifier)
-			if err != nil {
-				return nil, err
-			}
-			t, err := p.current()
-			if err != nil {
-				return nil, err
-			}
-			ptr.Name = ident.Literal
-			if t.Literal == "." {
-				p.advance(1)
-				ptr.HasSubModule = true
-				ptr.Next = &ast.ModuleDeclaration{}
-				ptr = ptr.Next
-			} else {
-				ptr.HasSubModule = false
-				break
-			}
-		}
-		_, err = p.expectLiteral(";")
+		ident, err := p.expectKind(token.Identifier)
 		if err != nil {
 			return nil, err
 		}
-		return m, nil
+		m := ast.ModuleDeclaration{}
+		m.Name = ident.Literal
+		chain, has, err := p.parseModuleChain(ident.Literal)
+		if err != nil {
+			return nil, err
+		}
+		if chain != nil {
+			m.Module = chain.(*ast.ModuleChain)
+		}
+		m.HasSubModule = has
+		_, err = p.expectLiteral(";")
+		return m, err
 
 	case "import":
-		p.advance(1)
-		i := &ast.ModuleImport{}
-		ptr := i
-		for {
-			ident, err := p.expectKind(token.Identifier)
-			if err != nil {
-				return nil, err
-			}
-			t, err := p.current()
-			if err != nil {
-				return nil, err
-			}
-			ptr.Name = ident.Literal
-			if t.Literal == "." {
-				p.advance(1)
-				ptr.HasSubModule = true
-				ptr.Next = &ast.ModuleImport{}
-				ptr = ptr.Next
-			} else {
-				ptr.HasSubModule = false
-				break
-			}
-		}
-		_, err = p.expectLiteral(";")
+		ident, err := p.expectKind(token.Identifier)
 		if err != nil {
 			return nil, err
 		}
-		return i, nil
+		m := ast.ModuleImport{}
+		m.Name = ident.Literal
+		chain, has, err := p.parseModuleChain(ident.Literal)
+		if err != nil {
+			return nil, err
+		}
+		if chain != nil {
+			m.Module = chain.(*ast.ModuleChain)
+		}
+		m.HasSubModule = has
+		_, err = p.expectLiteral(";")
+		return m, err
 	}
-
 	return nil, p.errorf("unknown literal")
 }
 
