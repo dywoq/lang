@@ -49,7 +49,10 @@ const (
 )
 
 var (
-	Keywords = Collection{}
+	Keywords = Collection{
+		"module",
+		"import",
+	}
 
 	Separators = Collection{
 		",",
