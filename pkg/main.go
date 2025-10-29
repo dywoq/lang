@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dywoq/lang/pkg/parser"
-	"github.com/dywoq/lang/pkg/scanner"
+	"github.com/dywoq/lang/pkg/module"
 )
 
 func main() {
@@ -14,23 +13,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	s, _ := scanner.New(f)
-	tokens, err := s.Scan(f.Name())
+	m := module.MapParser{}
+	maps, err := m.Parse(f)
 	if err != nil {
 		panic(err)
 	}
-
-	p := parser.New(tokens)
-	tree, err := p.Parse(f.Name())
-	if err != nil {
-		panic(err)
-	}
-
-	for _, statement := range tree.Statements {
-		content, err := json.MarshalIndent(statement, "", "  ")
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(string(content))
+	for key, value := range maps {
+		content, _ := json.MarshalIndent(value, "", "  ")
+		fmt.Printf("%s - %s\n", key, string(content))
 	}
 }
