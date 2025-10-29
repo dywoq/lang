@@ -22,6 +22,10 @@ type MapSymbol struct {
 	Module   string `json:"module"`
 }
 
+// ErrUnexpectedEof is returned by module maps parser,
+// when it was parsing and met EOF (End Of File).
+var ErrUnexpectedEof = errors.New("module: unexpected eof")
+
 // Parse parses the bytes got from r with io.ReadAll.
 //
 // Returns an error if it encountered an unexpected EOF,
@@ -79,7 +83,7 @@ func (m *MapParser) parse() (*MapSymbol, error) {
 		}
 		ptr.Name = string(m.input[nameStart:m.pos])
 		if m.eof() {
-			return nil, errors.New("module: unexpected eof after identifier")
+			return nil, ErrUnexpectedEof
 		}
 		if m.input[m.pos] == '.' {
 			m.pos++
@@ -108,7 +112,7 @@ func (m *MapParser) parse() (*MapSymbol, error) {
 		m.pos++
 	}
 	if m.eof() {
-		return nil, errors.New("module: unexpected eof while reading path")
+		return nil, ErrUnexpectedEof
 	}
 	fullPath := string(m.input[pathStart:m.pos])
 	m.pos++
@@ -129,7 +133,7 @@ func (m *MapParser) parsePath(fullPath string) (string, error) {
 		if r == '$' {
 			pos++
 			if pos >= len(fullPath) {
-				return "", errors.New("module: unexpected eof after '$'")
+				return "", ErrUnexpectedEof
 			}
 			start := pos
 			for pos < len(fullPath) && rune(fullPath[pos]) != '$' {
