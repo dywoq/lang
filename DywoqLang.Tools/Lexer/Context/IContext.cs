@@ -18,4 +18,18 @@ public interface IContext
 	/// or null.
 	/// </summary>
 	public string? Substring(int start, int end);
+
+	/// <summary>
+	/// Reports whether the lexer met the end of file.
+	/// </summary>
+	public bool EndOfFile();
+
+	/// <summary>
+	/// Returns the current position.
+	/// </summary>
+	public Position Position();
+
+	/// <summary>
+	/// Returns the future character, or null.
+	public char? Peek();
 }
