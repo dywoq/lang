@@ -6,10 +6,19 @@ namespace DywoqLang.Tools.Lexer.Token;
 /// </summary>
 public class ExpectedException : Exception
 {
+	public Position? Position { get; set; }
+
 	public ExpectedException() { }
 	public ExpectedException(string message) : base(message) { }
-	public ExpectedException(string message, Exception inner) : base(message, inner) { }
+	public ExpectedException(string message, Position position) : base(message)
+	{
+		Position = position;
+	}
 
+	public ExpectedException(string message, Position position, Exception inner) : base(message, inner)
+	{
+		Position = position;
+	}
 
 	/// <summary>
 	/// Returns the ExpectedException with the automatically formatted message
@@ -22,6 +31,6 @@ public class ExpectedException : Exception
 	/// Returns the ExpectedException with the automatically formatted message
 	/// with position.
 	/// </summary>
-	public static ExpectedException From(string message, Position position) =>
-		new($"ExpectedException: {message}; source: is {position.File}:{position.Line}:{position.Column}");
+	public static ExpectedException From(string message, Position position)
+		=> new($"ExpectedException: {message}; source: is {position.File}:{position.Line}:{position.Column}", position);
 }
