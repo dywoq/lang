@@ -25,12 +25,12 @@ public class ExpectedException : Exception
 	/// with no position.
 	/// </summary>
 	public static ExpectedException From(string message) =>
-			new($"ExpectedException: {message}; source is unknown");
+			new($"{message}; source is unknown");
 
 	/// <summary>
 	/// Returns the ExpectedException with the automatically formatted message
 	/// with position.
 	/// </summary>
 	public static ExpectedException From(string message, Position position)
-		=> new($"ExpectedException: {message}; source: is {position.File}:{position.Line}:{position.Column}", position);
+		=> new($"{message}; source: is {position.File}:{position.Line}:{position.Column}", position);
 }
